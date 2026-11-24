@@ -49,6 +49,31 @@ Run from the repository root:
 node --test project/model.test.mjs
 ```
 
+### Verified development environment
+
+| Command | Verified version |
+| --- | --- |
+| `python3 --version` | Python 3.14.4 |
+| `node --version` | Node.js v26.13.1 |
+| `codex --version` | Codex CLI 0.172.0 |
+
+`findmnt --mountpoint /data` confirmed that `/data` was mounted read/write. During final QA, a temporary file written at the workspace root was readable with identical contents under `/data`. The probe was removed, and a subsequent comparison confirmed that the workspace README and `/data/README.md` matched byte for byte.
+
+### Verified test results
+
+**Unit tests: 6 passed, 0 failed.** The tests cover calendar-day calculations and invalid dates, ingredient input validation, sample dates and recipe ordering, normalized matching and urgency tie-breaking, shopping-list deduplication, and counting ingredient value only once toward savings.
+
+**Chromium browser flows: 2 passed, 0 failed.**
+
+- The comprehensive QA flow covered inventory management, expiration filters, recipe-to-shopping-list actions, savings, reload persistence, and layouts from 320 to 1440 pixels. It recorded no browser console errors or failed requests. Automated axe scans reported zero violations across seven tested views and dialogs.
+- The smoke flow independently checked expiration alerts, ingredient validation and editing, adding a missing recipe ingredient to the shopping list, persistence after reload, updated savings, and responsive layouts.
+
+### Coding-agent assignment and revisions
+
+The coding agent was asked to inspect the repository, preserve the assignment files and dev container configuration, and build a responsive household food inventory app with expiration alerts, recipe recommendations, a shopping list, and estimated savings. The work included sample data, input validation, tests, and launch instructions. The final QA request called for testing those workflows, reviewing accessibility and layout, and documenting the results and environment.
+
+Keyboard testing showed that saving an ingredient edit lost focus when the list rerendered. The app now returns focus to the ingredient’s menu after an edit and moves focus to the page heading after removal. Screenshot review also revealed awkward headline wrapping and missing emoji glyphs in Chromium. The headline now wraps without a forced line break, and the decorative icons use inline SVG.
+
 See the [ISTG 6005 quality assurance report](docs/qa-report.md) for the coding-agent brief, verified environment and bind mount, Git checkpoints, browser checks, and revisions.
 
 The food photos are bundled in `project/assets` and sourced from Unsplash.
