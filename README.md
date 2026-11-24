@@ -1,41 +1,54 @@
-# istg6005-little-cloud
+# Pantry Rescue
 
-## Pantry Rescue
+Pantry Rescue is a browser-based inventory and meal-planning app for households that want to use food before it goes to waste. It helps home cooks see what they already have, decide what to cook next, and buy only the ingredients they’re missing.
 
-Pantry Rescue is a household dashboard for tracking ingredients, finding recipes, and shopping for what’s missing.
+- **Pantry inventory** lets you add, edit, use, or discard ingredients. Each entry records a category, quantity, expiration date, and estimated value in USD.
+- **Expiration alerts** surface ingredients due today through the next three days and flag items already past date.
+- **Recipe recommendations** rank four recipes by the share of ingredients you have. Ingredients due soon break ties. Each recipe shows its preparation steps and what’s missing.
+- **Shopping list** accepts missing recipe ingredients and manual entries. Check off items as you shop or remove them when you’re done.
+- **Estimated savings** increases by the entered value when you mark a whole pantry entry as used. Discarded entries add nothing.
 
-### Run locally
+## Run locally
 
-From the repository root, start a static server with Python 3.
+1. Open a terminal at the repository root. If you are using VS Code’s Dev Containers extension, open the repository in the supplied dev container.
+2. Start the app from your laptop terminal:
 
-```bash
-python3 -m http.server 8000 --bind 127.0.0.1 --directory project
-```
+   ```bash
+   python3 -m http.server 8000 --bind 127.0.0.1 --directory project
+   ```
 
-Open [Pantry Rescue](http://127.0.0.1:8000) in a modern browser. If you’re using a dev container, forward port `8000` in your editor. No package installation or API keys are needed.
+   From inside a dev container, use the command below, then forward port `8000` in VS Code’s **Ports** panel if it has not been forwarded automatically.
 
-### Use the app
+   ```bash
+   python3 -m http.server 8000 --bind 0.0.0.0 --directory project
+   ```
 
-1. Select **Add ingredient** and enter a name, category, quantity, expiration date, and estimated value in USD.
-2. Review **Use these first** for upcoming dates, or open **Expiration alerts** to see all ingredients due within three days or already past date. Open an ingredient’s menu to edit, discard, or mark it as used.
-3. Open **Recipes** to see how each recipe matches your pantry. Open a recipe for preparation steps and to add missing ingredients to your **Shopping List**.
-4. Add other shopping items manually and check off or remove items as you shop.
+3. Open [http://localhost:8000/](http://localhost:8000/). Keep the terminal open while using the app. Press **Ctrl+C** to stop the server.
 
-On first launch, the app loads eight sample ingredients with expiration dates relative to that day and a sample savings balance of $18.50. Marking a whole inventory entry as used adds its entered value to the estimate. Discarding it adds nothing. This estimates the value of food used. Actual cash savings depend on what you would otherwise have bought or thrown away.
+Running the app requires Python 3 and a modern browser. Node.js 20 or newer runs the unit tests. The application uses plain HTML, CSS, and JavaScript modules, with bundled photos and no build step or API keys.
 
-### Implementation
+## Screenshots
 
-- `project/index.html` and `project/styles.css` define the responsive interface. The layout changes from a desktop sidebar and dashboard columns to top navigation and stacked panels on small screens.
-- `project/app.mjs` handles navigation, forms, and browser storage. Data is saved to `localStorage` for the current browser and origin.
-- `project/model.mjs` contains the date calculations, validation, recipe ranking, and savings logic. Recipes are ranked by matched ingredient share, with near-expiration ingredients breaking ties. Matching ignores case and extra spaces, excludes past-date ingredients, and checks ingredient names without converting quantities or units.
-- `project/model.test.mjs` covers validation, expiration boundaries, recommendation ranking, shopping list deduplication, and savings accounting.
+Both screenshots show the sample household inventory.
 
-Photos from Unsplash are bundled under `project/assets` so they load when the app runs locally.
+| Desktop overview | Mobile overview |
+| --- | --- |
+| ![Pantry Rescue desktop overview with sidebar, pantry statistics, expiration priorities, and a recipe](docs/pantry-rescue-dashboard.png) | ![Pantry Rescue mobile overview with top navigation and stacked dashboard panels](docs/pantry-rescue-mobile.png) |
 
-### Run the tests
+## Data and estimates
 
-With Node.js 20 or newer, run the built-in test runner from the repository root.
+The first visit seeds eight ingredients with dates relative to that day and an illustrative savings balance of $18.50. Inventory, shopping items, and savings are stored in browser `localStorage` for the current origin. Use the same URL and browser profile to retain your data. Clearing site data restores the sample state on the next visit.
+
+Recipe matching uses ingredient names after normalizing case and whitespace. The match checks ingredient presence and ignores amounts, unit conversions, and substitutions. Past-date entries are excluded. Savings represents the entered value of ingredients marked as used. Actual cash savings will vary.
+
+## Testing and assignment evidence
+
+Run from the repository root:
 
 ```bash
 node --test project/model.test.mjs
 ```
+
+See the [ISTG 6005 quality assurance report](docs/qa-report.md) for the coding-agent brief, verified environment and bind mount, Git checkpoints, browser checks, and revisions.
+
+The food photos are bundled in `project/assets` and sourced from Unsplash.

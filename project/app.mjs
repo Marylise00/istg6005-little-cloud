@@ -14,6 +14,8 @@ const paths = {
   check: '<path d="m5 12 4 4L19 6"/>',
 };
 
+const categoryIcons = { Produce: 'leaf', Dairy: 'box', Protein: 'box', Grains: 'leaf', Pantry: 'box', Other: 'box' };
+
 const icon = name => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[name]}</svg>`;
 const escape = value => String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
 const money = cents => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(cents / 100);
@@ -52,6 +54,11 @@ function save(next, message) {
   render();
 }
 
+function focusIngredient(id) {
+  const button = content.querySelector(`[data-action="item"][data-id="${CSS.escape(id)}"]`);
+  (button ?? content.querySelector('h1')).focus();
+}
+
 function status(item) {
   const days = daysLeft(item.expiration);
   if (days < 0) return ['expired', 'Past date'];
@@ -62,11 +69,11 @@ function status(item) {
 
 function itemRow(item) {
   const [tone, label] = status(item);
-  return `<div class="item-row"><span class="food-icon" aria-hidden="true">${escape(item.emoji || categories[item.category])}</span><div class="item-info"><strong>${escape(item.name)}</strong><small>${escape(item.quantity)} · ${escape(item.category)} · <time datetime="${item.expiration}">${displayDate(item.expiration)}</time></small></div><span class="badge ${tone}" title="${displayDate(item.expiration)}">${label}</span><button class="icon-button" data-action="item" data-id="${escape(item.id)}" aria-label="Manage ${escape(item.name)}">${icon('more')}</button></div>`;
+  return `<div class="item-row"><span class="food-icon" aria-hidden="true">${icon(categoryIcons[item.category] || 'box')}</span><div class="item-info"><strong>${escape(item.name)}</strong><small>${escape(item.quantity)} · ${escape(item.category)} · <time datetime="${item.expiration}">${displayDate(item.expiration)}</time></small></div><span class="badge ${tone}" title="${displayDate(item.expiration)}">${label}</span><button class="icon-button" data-action="item" data-id="${escape(item.id)}" aria-label="Manage ${escape(item.name)}">${icon('more')}</button></div>`;
 }
 
 function recipeCard(recipe) {
-  return `<article class="recipe-card"><div class="recipe-image ${recipe.id}">${recipe.image ? `<img src="${recipe.image}" alt="" loading="lazy">` : `<span aria-hidden="true">${recipe.emoji}</span>`}<span class="badge fresh match">${Math.round(recipe.score * 100)}% match</span></div><div class="recipe-body"><div class="recipe-time">${icon('clock')} ${recipe.time} min${recipe.urgent ? ' · Uses expiring food' : ''}</div><h3>${recipe.name}</h3><p>${recipe.description}</p><button class="button secondary" data-action="recipe" data-id="${recipe.id}">View recipe</button></div></article>`;
+  return `<article class="recipe-card"><div class="recipe-image ${recipe.id}">${recipe.image ? `<img src="${recipe.image}" alt="" loading="lazy">` : `<span aria-hidden="true">${icon('book')}</span>`}<span class="badge fresh match">${Math.round(recipe.score * 100)}% match</span></div><div class="recipe-body"><div class="recipe-time">${icon('clock')} ${recipe.time} min${recipe.urgent ? ' · Uses expiring food' : ''}</div><h3>${recipe.name}</h3><p>${recipe.description}</p><button class="button secondary" data-action="recipe" data-id="${recipe.id}">View recipe</button></div></article>`;
 }
 
 function overview(items, suggestions) {
@@ -74,7 +81,7 @@ function overview(items, suggestions) {
   const expired = items.filter(item => daysLeft(item.expiration) < 0);
   const priority = [...soon, ...expired].slice(0, 4);
   const today = new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'long', day: 'numeric' }).format(new Date());
-  return `<section class="hero"><div class="hero-content"><span class="eyebrow">${icon('leaf')} WASTE LESS, EAT BETTER</span><h1>Make the most of<br> what you have.</h1><p>A little planning goes a long way. See what’s in your kitchen and give good food a second chance.</p><a class="button hero-button" href="#inventory">Explore my pantry</a></div><div class="hero-photo" role="img" aria-label="A market display of fresh produce"></div></section>
+  return `<section class="hero"><div class="hero-content"><span class="eyebrow">${icon('leaf')} WASTE LESS, EAT BETTER</span><h1>Make the most of what you have.</h1><p>A little planning goes a long way. See what’s in your kitchen and give good food a second chance.</p><a class="button hero-button" href="#inventory">Explore my pantry</a></div><div class="hero-photo" role="img" aria-label="A market display of fresh produce"></div></section>
   <div class="section-heading snapshot"><h2>At a glance</h2><span>${today}</span></div>
   <div class="stats">
     <a class="stat" href="#inventory"><span class="stat-icon green">${icon('box')}</span><div><span>In your pantry</span><strong>${items.length}<small> ingredients</small></strong></div></a>
@@ -116,11 +123,13 @@ function render() {
   else if (active === 'shopping') content.innerHTML = shopping();
   else if (active === 'recipes') content.innerHTML = `<div class="page-heading"><h1>Recipes</h1><p>Ideas ranked by how many ingredients you already have.</p></div><div class="recipe-grid">${suggestions.map(recipeCard).join('')}</div>`;
   else content.innerHTML = overview(items, suggestions);
+  content.querySelector('h1').tabIndex = -1;
 }
 
 function showDialog(title, body) {
   dialog.innerHTML = `<div class="dialog-header"><h2 id="dialog-title">${title}</h2><button class="icon-button" data-action="close" aria-label="Close dialog">${icon('close')}</button></div>${body}`;
-  if (!dialog.open) dialog.showModal();
+  if (dialog.open) dialog.querySelector('[data-action="close"]').focus();
+  else dialog.showModal();
 }
 
 function ingredientForm(item) {
@@ -156,10 +165,12 @@ document.addEventListener('click', event => {
   if (action === 'used' && item) {
     dialog.close();
     save(useIngredient(state, id), `Marked ${item.name} as used.`);
+    focusIngredient(id);
   }
   if (action === 'confirm-remove' && item) {
     dialog.close();
     save({ ...state, inventory: state.inventory.filter(entry => entry.id !== id) }, `Discarded ${item.name}.`);
+    focusIngredient(id);
   }
   if (action === 'recipe' || action === 'missing') {
     const recipe = recommend(state.inventory).find(entry => entry.id === id);
@@ -191,10 +202,11 @@ document.addEventListener('submit', event => {
   const issue = validateIngredient(fields);
   if (issue) { error.textContent = issue; return; }
   const previous = state.inventory.find(item => item.id === form.dataset.id);
-  const ingredient = { id: previous?.id || crypto.randomUUID(), name: fields.name.trim(), category: fields.category, quantity: fields.quantity.trim(), expiration: fields.expiration, cents: Math.round(Number(fields.cost) * 100), emoji: previous?.category === fields.category ? previous.emoji : categories[fields.category] };
+  const ingredient = { id: previous?.id || crypto.randomUUID(), name: fields.name.trim(), category: fields.category, quantity: fields.quantity.trim(), expiration: fields.expiration, cents: Math.round(Number(fields.cost) * 100) };
   const inventory = previous ? state.inventory.map(item => item.id === ingredient.id ? ingredient : item) : [...state.inventory, ingredient];
   dialog.close();
   save({ ...state, inventory }, `${ingredient.name} saved.`);
+  if (previous) focusIngredient(ingredient.id);
 });
 
 document.addEventListener('change', event => {
